@@ -131,7 +131,7 @@ with tf.Session(...) as sess:
 
 #### Build a tf.train.Example in Python:
 ```python
-# ==================== Build Example in one line ====================
+# ==================== Build in one line ====================
 example = tf.train.Example(features=tf.train.Features(feature={
     'bytes_values': tf.train.Feature(
         bytes_list=tf.train.BytesList(value=[bytes_feature])),
@@ -141,7 +141,7 @@ example = tf.train.Example(features=tf.train.Features(feature={
         int64_list=tf.train.Int64List(value=[int64_feature])),
     ...
 }))
-# ==================== OR build Example progressivly ====================
+# ==================== OR progressivly ====================
 example = tf.train.Example()
 example.features.feature['bytes_feature'].bytes_list.value.extend(bytes_values)
 example.features.feature['float_feature'].float_list.value.extend(float_values)
@@ -191,11 +191,17 @@ tf.parse_single_sequence_example(serialized,
     },)
 ```
 
-#### Write seqeuence/iterator of tfrecords into multiple sharded files, round-robin:
+#### Writes seqeuence/iterator of tfrecords into multiple sharded files, round-robin:
 ```python
 class TFRecordsWriter:
     def __init__(self, file_path):
         """Constructs a TFRecordsWriter that supports writing to sharded files.
+        
+        Writes a sequence of Example or SequenceExample to sharded files.
+        Typical usage:
+        with TFRecordsWriter(<file_path>) as writer:
+            # tfrecords 
+            writer.write(tfrecords)
 
         :param file_path: Destination file path, with '@<num_shards>' at the
         end to produce sharded files.
