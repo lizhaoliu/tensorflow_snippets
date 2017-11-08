@@ -1,4 +1,4 @@
-#### Generalized tensor contraction, tf.einsum:
+#### Tensor contraction (more generalized matrix multiplication):
 ```python
 # Matrix multiplication
 tf.einsum('ij,jk->ik', m0, m1)  # output[i, k] = sum_j m0[i, j] * m1[j, k]
