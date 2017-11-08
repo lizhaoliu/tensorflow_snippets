@@ -324,4 +324,4 @@ def show_graph(graph_def, max_const_size=32):
     """.format(code.replace('"', '&quot;'))
     display.display(display.HTML(iframe))
 ```
-Then call ```show_graph(tf.get_default_graph())``` or feeds another graph.
+Then call ```show_graph(tf.get_default_graph())``` to show in your Jupyter/IPython notebook.
