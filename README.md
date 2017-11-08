@@ -1,3 +1,23 @@
+#### Generalized tensor contraction, tf.einsum:
+```python
+# Matrix multiplication
+tf.einsum('ij,jk->ik', m0, m1)  # output[i, k] = sum_j m0[i, j] * m1[j, k]
+
+# Dot product
+tf.einsum('i,i->', u, v)  # output = sum_i u[i]*v[i]
+
+# Outer product
+tf.einsum('i,j->ij', u, v)  # output[i, j] = u[i]*v[j]
+
+# Transpose
+tf.einsum('ij->ji', m)  # output[j, i] = m[i,j]
+
+# Batch matrix multiplication
+tf.einsum('aij,ajk->aik', s, t)  # out[a, i, k] = sum_j s[a,i,j] * t[a, j, k]
+
+# Batch tensor contraction
+tf.einsum('nhwc,nwcd->nhd', s, t)  # out[n, h, d] = sum_w_c s[n, h, w, c] * t[n, w, c, d]
+```
 #### Shapes in Tensorflow:
 * [] (empty square brackets) as a shape denotes a scalar (0 dim). E.g. tf.FixedLenFeature([], ..) is a scalar feature.
 
