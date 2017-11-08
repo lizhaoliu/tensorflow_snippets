@@ -1,3 +1,19 @@
+# A sheet of Tensorflow snippets/tips
+#### Shapes:
+- ```tensor.shape``` returns tensor's static shape, while the graph is being built.
+- ```tensor.shape.as_list()``` returns the static shape as a integer list.
+- ```tensor.shape[i].value``` returns the static shape's i-th dimension size as an integer.
+- ```tf.shape(t)``` returns t's run-time shape as a tensor.
+- An example:
+```python
+x = tf.placeholder(tf.float32, shape=[None, 8]) # x shape is non-deterministic while building the graph.
+print(x.shape) # Outputs static shape (?, 8).
+shape_t = tf.shape(x)
+with tf.Session() as sess:
+    print(sess.run(shape_t, feed_dict={x: np.random.random(size=[4, 8])})) # Outputs run-time shape (4, 8).
+```
+- [] (empty square brackets) as a shape denotes a scalar (0 dim). E.g. tf.FixedLenFeature([], ..) is a scalar feature.
+
 #### Tensor contraction (more generalized matrix multiplication):
 ```python
 # Matrix multiplication
@@ -18,20 +34,6 @@ tf.einsum('aij,jk->aik', s, t)  # out[a, i, k] = sum_j s[a, i, j] * t[j, k]
 # Batch tensor contraction
 tf.einsum('nhwc,nwcd->nhd', s, t)  # out[n, h, d] = sum_w_c s[n, h, w, c] * t[n, w, c, d]
 ```
-#### Shapes in Tensorflow:
-- ```tensor.shape``` returns tensor's static shape, while the graph is being built.
-- ```tensor.shape.as_list()``` returns the static shape as a integer list.
-- ```tensor.shape[i].value``` returns the static shape's i-th dimension size as an integer.
-- ```tf.shape(t)``` returns t's shape as a tensor, need ```sess.run``` to get the run-time values.
-- An example:
-```python
-x = tf.placeholder(tf.float32, shape=[None, 8]) # x shape is non-deterministic while building the graph.
-print(x.shape) # Outputs static shape (?, 8).
-shape_t = tf.shape(x)
-with tf.Session() as sess:
-    print(sess.run(shape_t, feed_dict={x: np.random.random(size=[4, 8])})) # Outputs run-time shape (4, 8).
-```
-- [] (empty square brackets) as a shape denotes a scalar (0 dim). E.g. tf.FixedLenFeature([], ..) is a scalar feature.
 
 #### A typical input_fn (used for train/eval) for tf.estimator API:
 ```python
