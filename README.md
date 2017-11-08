@@ -13,7 +13,7 @@ tf.einsum('i,j->ij', u, v)  # output[i, j] = u[i]*v[j]
 tf.einsum('ij->ji', m)  # output[j, i] = m[i,j]
 
 # Batch matrix multiplication
-tf.einsum('aij,ajk->aik', s, t)  # out[a, i, k] = sum_j s[a, i, j] * t[a, j, k]
+tf.einsum('aij,jk->aik', s, t)  # out[a, i, k] = sum_j s[a, i, j] * t[j, k]
 
 # Batch tensor contraction
 tf.einsum('nhwc,nwcd->nhd', s, t)  # out[n, h, d] = sum_w_c s[n, h, w, c] * t[n, w, c, d]
