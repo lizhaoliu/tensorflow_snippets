@@ -1,4 +1,20 @@
 # A sheet of Tensorflow snippets/tips
+#### ```tf.where``` can spawn NaN in gradients:
+If either branch in ```tf.where``` contains Inf/NaN then it produces NaN in gradients, e.g.:
+```python
+# log_stddev = log(stddev).
+log_stddev = tf.constant([-100., 100.], dtype=tf.float32)
+# Computes 1.0 / stddev, in a numerically robust way.
+inv_stddev = tf.where(log_stddev >= 0.,
+                      tf.exp(-log_stddev),
+                      1. / (tf.exp(log_stddev) + 1e-6))
+grad_log_stddev = tf.gradients(inv_stddev, [log_stddev])
+with tf.Session() as sess:
+    inv_s, grad_log_s = sess.run([inv_stddev, grad_log_stddev])
+    print(inv_s)  # [  1.00000000e+06   3.78350585e-44]
+    print(grad_log_s)  # [array([ nan,  nan], dtype=float32)]
+```
+
 #### Shapes:
 - ```tensor.shape``` returns tensor's static shape, while the graph is being built.
 - ```tensor.shape.as_list()``` returns the static shape as a integer list.
