@@ -6,8 +6,8 @@ If either branch in ```tf.where``` contains Inf/NaN then it produces NaN in grad
 log_stddev = tf.constant([-100., 100.], dtype=tf.float32)
 # Computes 1.0 / stddev, in a numerically robust way.
 inv_stddev = tf.where(log_stddev >= 0.,
-                      tf.exp(-log_stddev),
-                      1. / (tf.exp(log_stddev) + 1e-6))
+                      tf.exp(-log_stddev),  # Creates Inf when -log_stddev is very large.
+                      1. / (tf.exp(log_stddev) + 1e-6))  # tf.exp(log_stddev) creates Inf when log_stddev is very large.
 grad_log_stddev = tf.gradients(inv_stddev, [log_stddev])
 with tf.Session() as sess:
     inv_s, grad_log_s = sess.run([inv_stddev, grad_log_stddev])
