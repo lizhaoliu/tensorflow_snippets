@@ -1,7 +1,7 @@
 # A sheet of Tensorflow snippets/tips
 #### Fancy indexing
-* ```tf.gather_nd(params, indices)``` retrieves slices from tensor ```params``` by integer tensor ```indices```, similar to Numpy's indexing. When confused, recall this single rule: __only the last dimension of ```indices``` slices ```params```__.
-  * ```indices.shape[-1] <= rank(params)```: Only the last dimension of ```indices``` slices ```params```, thus it must be no greater than the rank of ```params```.
+* ```tf.gather_nd(params, indices)``` retrieves slices from tensor ```params``` by integer tensor ```indices```, similar to Numpy's indexing. When confused, recall this single rule: **only the last dimension of ```indices``` actually slices ```params```, as a result the last dimension of ```indices``` is replaced with slices from ```params```**. Then we can ses:
+  * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```, otherwise it can't slice.
   * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example: 
   ```python
   # params has shape [4, 5, 6].
