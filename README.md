@@ -1,16 +1,31 @@
 # A sheet of Tensorflow snippets/tips
-#### ```tf.where``` can spawn NaN in gradients:
+#### Fancy indexing
+* ```tf.gather_nd(params, indices)``` retrieves slices from tensor ```params``` by integer tensor ```indices```, similar to Numpy's indexing. When confused, recall this single rule: __only the last dimension of ```indices``` slices ```params```__.
+  * ```indices.shape[-1] <= rank(params)```: Only the last dimension of ```indices``` slices ```params```, thus it must be no greater than the rank of ```params```.
+  * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example: 
+  ```python
+  # params has shape [4, 5, 6].
+  params = tf.reshape(tf.range(0, 120), [4, 5, 6])
+  # indices has shape [3, 2].
+  indices = tf.constant([[2, 3], [0, 1], [1, 2]], dtype=tf.int32)
+  # slices has shape [3, 6].
+  slices = tf.gather_nd(params, indices)
+  ```
+  
+#### Don't forget to reset default graph in Jupyter notebook:
+If you forgot to reset default Tensorflow graph (or create a new graph) in a Jupyter notebook cell, and run that cell for a few times then you may get weird results.
+
+#### Watch out! ```tf.where``` can spawn NaN in gradients:
 If either branch in ```tf.where``` contains Inf/NaN then it produces NaN in gradients, e.g.:
 ```python
-# log_stddev = log(stddev).
-log_stddev = tf.constant([-100., 100.], dtype=tf.float32)
-# Computes 1.0 / stddev, in a numerically robust way.
-inv_stddev = tf.where(log_stddev >= 0.,
-                      tf.exp(-log_stddev),  # Creates Inf when -log_stddev is very large.
-                      1. / (tf.exp(log_stddev) + 1e-6))  # tf.exp(log_stddev) creates Inf when log_stddev is very large.
-grad_log_stddev = tf.gradients(inv_stddev, [log_stddev])
+log_s = tf.constant([-100., 100.], dtype=tf.float32)
+# Computes 1.0 / exp(log_s), in a numerically robust way.
+inv_s = tf.where(log_s >= 0.,
+                 tf.exp(-log_s),  # Creates Inf when -log_s is large.
+                 1. / (tf.exp(log_s) + 1e-6))  # tf.exp(log_s) is Inf with large log_s.
+grad_log_s = tf.gradients(inv_s, [log_s])
 with tf.Session() as sess:
-    inv_s, grad_log_s = sess.run([inv_stddev, grad_log_stddev])
+    inv_s, grad_log_s = sess.run([inv_s, grad_log_s])
     print(inv_s)  # [  1.00000000e+06   3.78350585e-44]
     print(grad_log_s)  # [array([ nan,  nan], dtype=float32)]
 ```
