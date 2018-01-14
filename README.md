@@ -5,7 +5,7 @@
   * ```VALID```: No paddings please, only use *valid* points . Result can have different spatial shape.
 * Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, to compute convolution at index ```i```, points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]``` are used.
 * If you want *causal* convolution, which uses points between ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension and perform a normal convolution with ```VALID``` padding.
-* There are totally ```num_input_channels * num_output_channels``` of convolution kernels, each ```num_output_channels``` is the sum of the feature maps of *all* ```num_input_channels```.
+* Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
 
 #### Fancy indexing
 * ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can see:
