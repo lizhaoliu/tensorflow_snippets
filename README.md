@@ -1,6 +1,14 @@
 # A sheet of Tensorflow snippets/tips
+#### On convolutions
+* Typically there are two options for ```padding```:
+  * ```SAME```: Make sure result has *same* spatial shape as input tensor, this often requires padding 0's to input tensor.
+  * ```VALID```: No paddings please, only use *valid* points . Result can have different spatial shape.
+* Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, to compute convolution at index ```i```, points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]``` are used.
+* If you want *causal* convolution, which uses points between ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension and perform a normal convolution with ```VALID``` padding.
+* There are totally ```num_input_channels * num_output_channels``` of convolution kernels, each ```num_output_channels``` is the sum of the feature maps of *all* ```num_input_channels```.
+
 #### Fancy indexing
-* ```tf.gather_nd(params, indices)``` retrieves slices from tensor ```params``` by integer tensor ```indices```, similar to Numpy's indexing. When confused, recall this single rule: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can ses:
+* ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can see:
   * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```, otherwise it can't slice.
   * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example: 
   ```python
