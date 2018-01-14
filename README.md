@@ -1,16 +1,29 @@
-# A sheet of Tensorflow snippets/tips
-#### On convolutions
-* Typically there are two options for ```padding```:
+# Tensorflow Snippets From the Field.
+
+## Table of Contents
+- [On Convolutions](#on-convolutions)
+- [Fancy Indexing](#fancy-indexing)
+- [Don't Forget to Reset Default Graph in Jupyter Notebook](#dont-forget-to-reset-default-graph-in-jupyter-notebook)
+- [Watch Out! ```tf.where``` Can Spawn NaN in Gradients](#watch-out-tfwhere-can-spawn-nan-in-gradients)
+- [Shapes](#shapes)
+- [Tensor Contraction (More Generalized Matrix Multiplication)](#tensor-contraction-more-generalized-matrix-multiplication)
+- [```tf.estimator``` API](#tfestimator-api)
+- [Load A saved_model and Run Inference (in Python)](#load-a-saved_model-and-run-inference-in-python)
+- [Input Features! ```tf.train.Example``` and ```tf.train.SequenceExample```](#input-features-tftrainexample-and-tftrainsequenceexample)
+- [Visualize Tensorflow Graph in Jupyter Notebook](#visualize-tensorflow-graph-in-jupyter-notebook)
+
+#### On Convolutions
+- Typically there are two options for ```padding```:
   * ```SAME```: Make sure result has *same* spatial shape as input tensor, this often requires padding 0's to input tensor.
   * ```VALID```: No paddings please, only use *valid* points . Result can have different spatial shape.
-* Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, to compute convolution at index ```i```, points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]``` are used.
-* If you want *causal* convolution, which uses points between ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension and perform a normal convolution with ```VALID``` padding.
-* Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
+- Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, to compute convolution at index ```i```, points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]``` are used.
+- If you want *causal* convolution, which uses points between ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension and perform a normal convolution with ```VALID``` padding.
+- Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
 
-#### Fancy indexing
-* ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can see:
+#### Fancy Indexing
+- ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can see:
   * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```, otherwise it can't slice.
-  * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example: 
+  * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example:
   ```python
   # params has shape [4, 5, 6].
   params = tf.reshape(tf.range(0, 120), [4, 5, 6])
@@ -19,11 +32,11 @@
   # slices has shape [3, 6].
   slices = tf.gather_nd(params, indices)
   ```
-  
-#### Don't forget to reset default graph in Jupyter notebook:
+
+#### Don't Forget to Reset Default Graph in Jupyter Notebook
 If you forgot to reset default Tensorflow graph (or create a new graph) in a Jupyter notebook cell, and run that cell for a few times then you may get weird results.
 
-#### Watch out! ```tf.where``` can spawn NaN in gradients:
+#### Watch out! ```tf.where``` Can Spawn NaN in Gradients
 If either branch in ```tf.where``` contains Inf/NaN then it produces NaN in gradients, e.g.:
 ```python
 log_s = tf.constant([-100., 100.], dtype=tf.float32)
@@ -38,7 +51,7 @@ with tf.Session() as sess:
     print(grad_log_s)  # [array([ nan,  nan], dtype=float32)]
 ```
 
-#### Shapes:
+#### Shapes
 - ```tensor.shape``` returns tensor's static shape, while the graph is being built.
 - ```tensor.shape.as_list()``` returns the static shape as a integer list.
 - ```tensor.shape[i].value``` returns the static shape's i-th dimension size as an integer.
@@ -53,28 +66,24 @@ with tf.Session() as sess:
 ```
 - [] (empty square brackets) as a shape denotes a scalar (0 dim). E.g. tf.FixedLenFeature([], ..) is a scalar feature.
 
-#### Tensor contraction (more generalized matrix multiplication):
+#### Tensor Contraction (More Generalized Matrix Multiplication)
 ```python
 # Matrix multiplication
 tf.einsum('ij,jk->ik', m0, m1)  # output[i, k] = sum_j m0[i, j] * m1[j, k]
-
 # Dot product
 tf.einsum('i,i->', u, v)  # output = sum_i u[i]*v[i]
-
 # Outer product
 tf.einsum('i,j->ij', u, v)  # output[i, j] = u[i]*v[j]
-
 # Transpose
 tf.einsum('ij->ji', m)  # output[j, i] = m[i,j]
-
 # Batch matrix multiplication
 tf.einsum('aij,jk->aik', s, t)  # out[a, i, k] = sum_j s[a, i, j] * t[j, k]
-
 # Batch tensor contraction
 tf.einsum('nhwc,nwcd->nhd', s, t)  # out[n, h, d] = sum_w_c s[n, h, w, c] * t[n, w, c, d]
 ```
 
-#### A typical input_fn (used for train/eval) for tf.estimator API:
+#### ```tf.estimator``` API
+- A typical input_fn (used for train/eval) for tf.estimator API:
 ```python
 def make_input_fn(mode, ...):
     """Return input_fn for train/eval in tf.estimator API.
@@ -87,7 +96,7 @@ def make_input_fn(mode, ...):
     """
     def _input_fn():
         """The input function.
-        
+
         Returns:
             features: A dict of {'feature_name': feature_tensor}.
             labels: A tensor of labels.
@@ -105,7 +114,7 @@ def make_input_fn(mode, ...):
     return _input_fn
 ```
 
-#### A typical model_fn for tf.estimator API:
+- A typical model_fn for tf.estimator API:
 ```python
 def make_model_fn(...):
     """Return model_fn to build a tf.estimator.Estimator.
@@ -117,7 +126,7 @@ def make_model_fn(...):
     """
     def _model_fn(features, labels, mode):
         """Model function.
-        
+
         Args:
             features: The first item returned from the input_fn for train/eval, a dict of {'feature_name': feature_tensor}. If mode is ModeKeys.PREDICT, same as in serving_input_receiver_fn.
             labels: The second item returned from the input_fn, a single Tensor or dict. If mode is ModeKeys.PREDICT, labels=None will be passed.
@@ -160,7 +169,7 @@ def make_model_fn(...):
     return _model_fn
 ```
 
-#### Use tf.estimator.Estimator to export a saved_model:
+- Use tf.estimator.Estimator to export a saved_model:
 ```python
 # serving_features must match features in model_fn when mode == tf.estimator.ModeKeys.PREDICT.
 serving_features = {'serving_input_1': tf.placeholder(...), 'serving_input_2': tf.placeholder(...), ...}
@@ -168,7 +177,7 @@ estimator.export_savedmodel(export_dir,
                             tf.estimator.export.build_raw_serving_input_receiver_fn(serving_features))
 ```
 
-#### Use tf.contrib.learn.Experiment to export a saved_model:
+- Use tf.contrib.learn.Experiment to export a saved_model:
 ```python
 # serving_features must match features in model_fn when mode == tf.estimator.ModeKeys.PREDICT.
 serving_features = {'serving_input_1': tf.placeholder(...), 'serving_input_2': tf.placeholder(...), ...}
@@ -176,33 +185,36 @@ export_strategy = tf.contrib.learn.utils.make_export_strategy(tf.estimator.expor
 expriment = tf.contrib.learn.Experiment(..., export_strategies=[export_strategy], ...)
 ```
 
-#### Load a saved_model and run inference (in Python):
+#### Load A saved_model and Run Inference (in Python)
 ```python
 with tf.Session(...) as sess:
     # Load saved_model MetaGraphDef from export_dir.
     meta_graph_def = tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], export_dir)
-    
+
     # Get SignatureDef for serving (here PREDICT_METHOD_NAME is used as export_outputs key in model_fn).
     sigs = meta_graph_def.signature_def[tf.saved_model.signature_constants.PREDICT_METHOD_NAME]
-    
+
     # Get the graph for retrieving input/output tensors.
     g = tf.get_default_graph()
-    
+
     # Retrieve serving input tensors, keys must match keys defined in serving_features (when building input receiver fn).
     input_1 = g.get_tensor_by_name(sigs.inputs['input_1'].name)
     input_2 = g.get_tensor_by_name(sigs.inputs['input_2'].name)
     ...
-    
+
     # Retrieve serving output tensors, keys must match keys defined in ExportOutput (e.g. PredictOutput) in export_outputs.
     output_1 = g.get_tensor_by_name(sigs.outputs['output_1'].name)
     output_2 = g.get_tensor_by_name(sigs.outputs['output_2'].name)
     ...
-    
+
     # Run inferences.
     outputs_values = sess.run([output_1, output_2, ...], feed_dict={input_1: ..., input_2: ..., ...})
 ```
 
-#### Build a tf.train.Example in Python:
+#### Input Features! ```tf.train.Example``` and ```tf.train.SequenceExample```
+- A [tf.train.Example](https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/core/example/example.proto#L88) is roughly a map of *{feature_name: value_list}*.
+- A [tf.train.SequenceExample](https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/core/example/example.proto#L292) is roughly a ```tf.train.Example``` plus a map of *{feature_name: list_of_value_lists}*.
+- Build a tf.train.Example in Python:
 ```python
 # ==================== Build in one line ====================
 example = tf.train.Example(features=tf.train.Features(feature={
@@ -221,8 +233,7 @@ example.features.feature['float_feature'].float_list.value.extend(float_values)
 example.features.feature['int64_feature'].int64_list.value.extend(int64_values)
 ...
 ```
-
-#### Build a tf.train.SequenceExample in Python:
+- Build a tf.train.SequenceExample in Python:
 ```python
 sequence_example = tf.train.SequenceExample()
 
@@ -244,11 +255,7 @@ feature_1 = feature_list_1.feature.add()
 ...
 ```
 
-#### [Example](https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/core/example/example.proto#L88) is roughly a map of {feature_name: value_list}.
-
-#### [SequenceExample](https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/core/example/example.proto#L292) is roughly a map of {feature_name: list_of_value_lists}.
-
-#### To parse a SequenceExample:
+- To parse a SequenceExample:
 ```python
 tf.parse_single_sequence_example(serialized,
     context_features={
@@ -264,16 +271,16 @@ tf.parse_single_sequence_example(serialized,
     },)
 ```
 
-#### Writes seqeuence/iterator of tfrecords into multiple sharded files, round-robin:
+- Write tfrecords to sharded files, round-robin:
 ```python
 class TFRecordsWriter:
     def __init__(self, file_path):
         """Constructs a TFRecordsWriter that supports writing to sharded files.
-        
+
         Writes a sequence of Example or SequenceExample to sharded files.
         Typical usage:
         with TFRecordsWriter(<file_path>) as writer:
-            # tfrecords 
+            # tfrecords
             writer.write(tfrecords)
 
         :param file_path: Destination file path, with '@<num_shards>' at the
@@ -323,7 +330,7 @@ class TFRecordsWriter:
                     writer.write(tfrecord.SerializeToString())
 ```
 
-#### Visualize Tensorflow graph in jupyter/ipython:
+#### Visualize Tensorflow Graph in Jupyter Notebook
 ```python
 import numpy as np
 from IPython import display
