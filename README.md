@@ -3,26 +3,25 @@
 ## Table of Contents
 - [On Convolutions](#on-convolutions)
 - [Fancy Indexing](#fancy-indexing)
-- [Don't Forget to Reset Default Graph in Jupyter Notebook](#dont-forget-to-reset-default-graph-in-jupyter-notebook)
-- [Watch Out! ```tf.where``` Can Spawn NaN in Gradients](#watch-out-tfwhere-can-spawn-nan-in-gradients)
+- [Numerical Stability](#numerical-stability)
 - [Shapes](#shapes)
 - [Tensor Contraction (More Generalized Matrix Multiplication)](#tensor-contraction-more-generalized-matrix-multiplication)
 - [```tf.estimator``` API](#tfestimator-api)
 - [Load A saved_model and Run Inference (in Python)](#load-a-saved_model-and-run-inference-in-python)
 - [Input Features! ```tf.train.Example``` and ```tf.train.SequenceExample```](#input-features-tftrainexample-and-tftrainsequenceexample)
-- [Visualize Tensorflow Graph in Jupyter Notebook](#visualize-tensorflow-graph-in-jupyter-notebook)
+- [Misc](#misc)
 
 #### On Convolutions
 - Typically there are two options for ```padding```:
   * ```SAME```: Make sure result has *same* spatial shape as input tensor, this often requires padding 0's to input tensor.
   * ```VALID```: No paddings please, only use *valid* points . Result can have different spatial shape.
-- Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, to compute convolution at index ```i```, points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]``` are used.
-- If you want *causal* convolution, which uses points between ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension and perform a normal convolution with ```VALID``` padding.
+- Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, convolution at index ```i``` is computed using points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]```.
+- If you want *causal* convolution which instead uses points between indices ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension then perform a normal convolution with ```VALID``` padding.
 - Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
 
 #### Fancy Indexing
-- ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: **only the last dimension of ```indices``` slices ```params```, then that dimension is "replaced" with the slices**. Then we can see:
-  * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```, otherwise it can't slice.
+- ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: *only the last dimension of ```indices``` does slice ```params```, and that dimension is "replaced" with those slices*. It's easy to see that:
+  * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```.
   * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example:
   ```python
   # params has shape [4, 5, 6].
@@ -33,10 +32,9 @@
   slices = tf.gather_nd(params, indices)
   ```
 
-#### Don't Forget to Reset Default Graph in Jupyter Notebook
-If you forgot to reset default Tensorflow graph (or create a new graph) in a Jupyter notebook cell, and run that cell for a few times then you may get weird results.
-
-#### Watch out! ```tf.where``` Can Spawn NaN in Gradients
+#### Numerical Stability
+- ```Inf``` morphs to ```NaN``` while plugged into back-prop (chain rule).
+- Watch out! ```tf.where``` Can Spawn NaN in Gradients
 If either branch in ```tf.where``` contains Inf/NaN then it produces NaN in gradients, e.g.:
 ```python
 log_s = tf.constant([-100., 100.], dtype=tf.float32)
@@ -330,7 +328,10 @@ class TFRecordsWriter:
                     writer.write(tfrecord.SerializeToString())
 ```
 
-#### Visualize Tensorflow Graph in Jupyter Notebook
+#### Misc
+- Don't Forget to Reset Default Graph in Jupyter Notebook
+If you forgot to reset default Tensorflow graph (or create a new graph) in a Jupyter notebook cell, and run that cell for a few times then you may get weird results.
+- Visualize Tensorflow Graph in Jupyter Notebook
 ```python
 import numpy as np
 from IPython import display
