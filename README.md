@@ -15,8 +15,8 @@
 - Typically there are two options for ```padding```:
   * ```SAME```: Make sure result has *same* spatial shape as input tensor, this often requires padding 0's to input tensor.
   * ```VALID```: No paddings please, only use *valid* points . Result can have different spatial shape.
-- Tensorflow by default performs *centered* convolution (kernel is centered around current point). For each spatial dimension, convolution at index ```i``` is computed using points between indices (inclusive) ```[i - (kernel_size - 1) // 2, i + kernel_size // 2]```.
-- If you want *causal* convolution which instead uses points between indices ```[i - (kernel_size - 1), i]```, a simple solution is to pad ```kernel_size - 1``` of 0's at the beginning of that dimension then perform a normal convolution with ```VALID``` padding.
+- Tensorflow by default performs *centered* convolution (kernel is centered around current point). With ```k```: kernel size, ```d```: dilation rate, then extended kernel size ```k' = d * (k - 1) + 1```. For each spatial dimension, convolution at index ```i``` is computed using points between indices (inclusive) ```[i - (k' - 1) // 2, i + k' // 2]```. 
+- *Causal* convolution uses points between indices ```[i - d * (k - 1), i]```, a simple solution is to pad ```d * (k - 1)``` of 0's at the beginning of that dimension then perform a normal convolution with ```VALID``` padding.
 - Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
 
 #### Fancy Indexing
