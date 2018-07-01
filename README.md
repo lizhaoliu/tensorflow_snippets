@@ -269,63 +269,63 @@ tf.parse_single_sequence_example(serialized,
     },)
 ```
 
-- Write tfrecords to sharded files, round-robin:
+- Write tfrecords to sharded files. Reading data from multiple input files can increase I/O throughput in TF:
 ```python
-class TFRecordsWriter:
-    def __init__(self, file_path):
-        """Constructs a TFRecordsWriter that supports writing to sharded files.
+import multiprocessing
+from concurrent import futures
 
-        Writes a sequence of Example or SequenceExample to sharded files.
-        Typical usage:
-        with TFRecordsWriter(<file_path>) as writer:
-            # tfrecords
-            writer.write(tfrecords)
+def write_tf_records(file_path, tf_records):
+    """Writes TFRecord (Example or SequenceExample) data to output file.
 
-        :param file_path: Destination file path, with '@<num_shards>' at the
-        end to produce sharded files.
+    :param file_path: the full output file path, can add `@N` at the end that
+        specifies total number of shards, e.g. /data/training.tfrecords@10.
+    :param tf_records: a list or tuple of `tf.train.Example` or
+        `tf.train.SequenceExample` instances.
+    """
+
+    def _write_data_to_file(file_path, tf_records):
+        """Writes data into specified output file path.
+
+        :param file_path: full path of output file.
+        :param tf_records: a list of Example or SequenceExample instances.
         """
-        shard_sym_idx = file_path.rfind('@')
-        if shard_sym_idx != -1:
-            self._num_shards = int(file_path[shard_sym_idx + 1:])
-            if self._num_shards <= 0:
-                raise ValueError('Number of shards must be a positive integer.')
-            self._file_path = file_path[:shard_sym_idx]
-        else:
-            self._num_shards = 1
-            self._file_path = file_path
+        with tf.python_io.TFRecordWriter(file_path) as writer:
+            for tf_record in tf_records:
+                writer.write(tf_record.SerializeToString())
 
-    def __enter__(self):
-        if self._num_shards > 1:
-            shard_name_fmt = '{{}}-{{:0>{}}}-of-{}'.format(
-                len(str(self._num_shards)),
-                self._num_shards)
-            self._writers = [
-                tf.python_io.TFRecordWriter(
-                    shard_name_fmt.format(self._file_path, i))
-                for
-                i in range(self._num_shards)]
-        else:
-            self._writers = [tf.python_io.TFRecordWriter(self._file_path)]
-        return self
+    def _get_shards_paths(file_path):
+        """Gets (shard) file paths by parsing from provided file path.
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._writers:
-            for writer in self._writers:
-                if writer:
-                    writer.flush()
-                    writer.close()
-
-    def write(self, tfrecords):
-        """Writes a sequence/iterator of Example or SequenceExample to file(s).
-
-        :param tfrecords: A sequence/iterator of Example or SequenceExample.
-        :return:
+        :param file_path: file path that may contain shard syntax "@N".
+        :return: a list of file paths.
         """
-        if self._writers:
-            for i, tfrecord in enumerate(tfrecords):
-                writer = self._writers[i % self._num_shards]
-                if writer:
-                    writer.write(tfrecord.SerializeToString())
+        shard_char_idx = file_path.rfind('@')
+
+        # No shards specified.
+        if shard_char_idx == -1:
+            return [file_path]
+
+        num_shards = int(file_path[shard_char_idx + 1:])
+        if num_shards <= 0:
+            raise ValueError('Number of shards must be a positive integer.')
+        prefix = file_path[:shard_char_idx]
+        return ['{}-{}-of-{}'.format(prefix, i, num_shards) for i
+                in range(num_shards)]
+
+    if not isinstance(tf_records, list) and not isinstance(tf_records, tuple):
+        raise TypeError('tf_records must be a list or tuple.')
+
+    tf_records = list(tf_records)
+    shards_paths = _get_shards_paths(file_path)
+
+    if len(shards_paths) > len(tf_records):
+        raise ValueError('More data than file shards.')
+
+    with futures.ThreadPoolExecutor(
+            max_workers=multiprocessing.cpu_count() - 1) as executor:
+        for shard_id, file_path in enumerate(shards_paths):
+            executor.submit(_write_data_to_file, file_path,
+                            tf_records[shard_id::len(shards_paths)])
 ```
 
 #### Misc
