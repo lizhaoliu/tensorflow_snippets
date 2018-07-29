@@ -2,7 +2,7 @@
 
 ## Table of Contents
 - [On Convolutions](#on-convolutions)
-- [Fancy Indexing](#fancy-indexing)
+- [Indexing](#indexing)
 - [Numerical Stability](#numerical-stability)
 - [Shapes](#shapes)
 - [Tensor Contraction (More Generalized Matrix Multiplication)](#tensor-contraction-more-generalized-matrix-multiplication)
@@ -19,7 +19,7 @@
 - *Causal* convolution uses points between indices ```[i - d * (k - 1), i]```, a simple solution is to pad ```d * (k - 1)``` of 0's at the beginning of that dimension then perform a normal convolution with ```VALID``` padding.
 - Convolution kernel has shape ```[spatial_dim[0], ..., spatial_dim[n - 1], num_input_channels, num_output_channels]```. For each output channel ```k```, ```output[..., k] = sum_over_i {input[..., i] * kernel[..., i, k]}```, here ```*``` is convolution operator.
 
-#### Fancy Indexing
+#### Indexing
 - ```tf.gather_nd(params, indices)``` retrieves slices from ```params``` by ```indices```. The rule is simple: *only the last dimension of ```indices``` does slice ```params```, and that dimension is "replaced" with those slices*. It's easy to see that:
   * ```indices.shape[-1] <= rank(params)```: The last dimension of ```indices``` must be no greater than the rank of ```params```.
   * Result tensor shape is ```indices.shape[:-1] + params.shape[indices.shape[-1]:]```, example:
@@ -31,6 +31,7 @@
   # slices has shape [3, 6].
   slices = tf.gather_nd(params, indices)
   ```
+- ```tf.gather_nd``` and Numpy fancy indexing: ```x[indices]``` == ```tf.gather_nd(x, zip(*indices))```; ```tf.gather_nd(x, indices)``` == ```x[zip(*indices)]```. Where ```x``` is Numpy array and ```indices``` is indexing array (dim > 1).
 
 #### Numerical Stability
 - ```Inf``` morphs to ```NaN``` while plugged into back-prop (chain rule).
