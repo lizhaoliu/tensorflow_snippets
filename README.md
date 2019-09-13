@@ -64,6 +64,12 @@ with tf.Session() as sess:
     print(sess.run(shape_t, feed_dict={x: np.random.random(size=[4, 8])})) # Outputs run-time shape (4, 8).
 ```
 - [] (empty square brackets) as a shape denotes a scalar (0 dim). E.g. tf.FixedLenFeature([], ..) is a scalar feature.
+- Broadcasting on two arrays starts with the _trailing_ dimensions, and works its way _backward_ to the leading dimensions. E.g. 
+```
+A      (4d array):  8 x 1 x 6 x 1
+B      (3d array):      7 x 1 x 5
+Result (4d array):  8 x 7 x 6 x 5
+```
 
 #### Tensor Contraction (More Generalized Matrix Multiplication)
 ```python
