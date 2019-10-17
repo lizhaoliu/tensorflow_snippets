@@ -16,7 +16,7 @@
 - Install CUDA 10.0 on Ubuntu 18.04 LTS GPU server:
 ```sh
 # 1. Install NVIDIA driver either through "Additional Drivers", or:
-$ sudo apt install --no-install-recommends nvidia-driver-418
+$ sudo apt install --no-install-recommends nvidia-driver-430
 # Reboot and then check that GPUs are visible using the command: nvidia-smi.
 
 # 2. Add NVIDIA package repositories
