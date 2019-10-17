@@ -35,7 +35,7 @@ $ sudo apt install --no-install-recommends \
     libcudnn7-dev=7.6.2.24-1+cuda10.0
 
 # 4. Install TensorRT. Requires that libcudnn7 is installed above.
-$ sudo apt-get install -y --no-install-recommends libnvinfer5=5.1.5-1+cuda10.0 \
+$ sudo apt install -y --no-install-recommends libnvinfer5=5.1.5-1+cuda10.0 \
     libnvinfer-dev=5.1.5-1+cuda10.0
 ```
 - Install Tensorflow 2.0 GPU version:
