@@ -1,6 +1,7 @@
 # Tensorflow Snippets From the Field.
 
 ## Table of Contents
+- [System Setup](#system-setup)
 - [On Convolutions](#on-convolutions)
 - [Indexing](#indexing)
 - [Numerical Stability](#numerical-stability)
@@ -10,6 +11,51 @@
 - [Load A saved_model and Run Inference (in Python)](#load-a-saved_model-and-run-inference-in-python)
 - [Input Features! ```tf.train.Example``` and ```tf.train.SequenceExample```](#input-features-tftrainexample-and-tftrainsequenceexample)
 - [Misc](#misc)
+
+#### System Setup
+- Install CUDA 10.0 on Ubuntu 18.04 LTS GPU server:
+```sh
+# 1. Install NVIDIA driver either through "Additional Drivers", or:
+$ sudo apt install --no-install-recommends nvidia-driver-418
+# Reboot and then check that GPUs are visible using the command: nvidia-smi.
+
+# 2. Add NVIDIA package repositories
+$ wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
+$ sudo dpkg -i cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
+$ sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+$ sudo apt update
+$ wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+$ sudo apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+$ sudo apt update
+
+# 3. Install development and runtime libraries.
+$ sudo apt install --no-install-recommends \
+    cuda-10-0 \
+    libcudnn7=7.6.2.24-1+cuda10.0  \
+    libcudnn7-dev=7.6.2.24-1+cuda10.0
+
+# 4. Install TensorRT. Requires that libcudnn7 is installed above.
+$ sudo apt-get install -y --no-install-recommends libnvinfer5=5.1.5-1+cuda10.0 \
+    libnvinfer-dev=5.1.5-1+cuda10.0
+```
+- Install Tensorflow 2.0 GPU version:
+```sh
+$ python3 -m pip install --upgrade pip
+$ python3 -m pip install --user tensorflow-gpu
+```
+
+- Setup SSH server on GPU server:
+  * Install OpenSSH server: `$ sudo apt install openssh-server`.
+  * Add port forwarding rule for port 22.
+  
+- Setup SSH client on our ultra book:
+  * Create SSH key: `$ ssh-keygen -t rsa -b 4096`.
+  * Install SSH key on the GPU server as an authorized key: `$ ssh-id-copy <user>@<server-ip>`.
+  * Now we can connect to the GPU server by: `$ ssh -i <ssh-key> <user>@<server-ip>`.
+  
+- Add [PyCharm remote Python interpreter](https://www.jetbrains.com/help/pycharm/configuring-remote-interpreters-via-ssh.html) on GPU server via SSH.
+
+- Happy machine learning!
 
 #### On Convolutions
 - Typically there are two options for ```padding```:
